@@ -1,89 +1,69 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  useColorScheme,
-  Alert,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { NativeEventEmitter, NativeModules, StyleSheet, View, Text } from 'react-native';
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+const { BarcodeScanner } = NativeModules;
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const App = () => {
+  const [scannedCode, setScannedCode] = useState<string>('');
+  const [isScannerAvailable, setIsScannerAvailable] = useState<boolean>(false);
 
-  const handleLogin = () => {
-    if (email === '' || password === '') {
-      Alert.alert('Error', 'Please enter both email and password');
-    } else {
-      Alert.alert('Login', `Email: ${email}\nPassword: ${password}`);
+  useEffect(() => {
+    if (!BarcodeScanner) {
+      console.warn('BarcodeScanner module is not available');
+      setIsScannerAvailable(false);
+      return;
     }
-  };
+
+    setIsScannerAvailable(true);
+    const eventEmitter = new NativeEventEmitter(BarcodeScanner);
+    
+    const subscription = eventEmitter.addListener(
+      'onBarcodeScanned',
+      (event) => {
+        console.log('Scanned barcode:', event.barcode);
+        setScannedCode(event.barcode);
+      }
+    );
+
+    // Start scanning when component mounts
+    BarcodeScanner.startScanning();
+
+    // Cleanup
+    return () => {
+      subscription.remove();
+      BarcodeScanner.stopScanning();
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#888"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Log In</Text>
-      </TouchableOpacity>
+      <Text style={styles.text}>
+        {BarcodeScanner ? 'Scanning for barcodes...' : 'Scanner not available'}
+      </Text>
+      {scannedCode ? (
+        <Text style={styles.scannedText}>Last scanned: {scannedCode}</Text>
+      ) : null}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 30,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    alignSelf: 'center',
-    marginBottom: 40,
-  },
-  input: {
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    borderRadius: 8,
     alignItems: 'center',
+    backgroundColor: '#F5FCFF',
   },
-  buttonText: {
-    color: '#fff',
+  text: {
+    fontSize: 20,
+    textAlign: 'center',
+    margin: 10,
+  },
+  scannedText: {
     fontSize: 16,
-    fontWeight: '600',
+    textAlign: 'center',
+    margin: 10,
+    color: '#2196F3',
   },
 });
 

@@ -1,6 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" />
+    <uses-permission android:name="com.honeywell.decode.permission.DECODING_BROADCAST" />
+    
+    <!-- Add for Android 12+ compatibility -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
       android:name=".MainApplication"
@@ -10,6 +18,7 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:supportsRtl="true">
+      
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -22,5 +31,18 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Add Honeywell Broadcast Receiver (if using intent-based scanning) -->
+      <receiver 
+        android:name="com.honeywell.decode.DecodeBroadcastReceiver"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="com.honeywell.action.BARCODE_DECODING_BROADCAST" />
+        </intent-filter>
+      </receiver>
+      
+      <!-- Add if using DataWedge (optional) -->
+      <service android:name="com.honeywell.aidc.BarcodeService" 
+               android:exported="true"/>
     </application>
 </manifest>
